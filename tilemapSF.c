@@ -1,9 +1,7 @@
+#include "tilemapSF.h"
 #include <stdio.h>
-#include "include/cJSON.h" 
-#include "loadmap.h"
 
 static int readFromFile(char* buf, char* filename, int buflen);
-
 
 
 static int readFromFile(char* buf, char* filename, int buflen) {

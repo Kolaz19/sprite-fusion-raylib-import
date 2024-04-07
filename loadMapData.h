@@ -25,4 +25,11 @@ struct TileMap {
 };
 */
 
+typedef enum errLoadMap {
+    OK = 1,
+    ERR_PARSE,
+    ERR_NO_LAYERS_PROPERTY,
+    ERR_LAYER_NOT_FOUND
+}errLoadMap;
+
 #endif
