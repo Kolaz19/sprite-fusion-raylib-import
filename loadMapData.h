@@ -28,8 +28,10 @@ struct TileMap {
 typedef enum errLoadMap {
     OK = 1,
     ERR_PARSE,
-    ERR_NO_LAYERS_PROPERTY,
-    ERR_LAYER_NOT_FOUND
+    ERR_MISSING_PROPERTY,
+    ERR_LAYER_NOT_FOUND,
+    ERR_ID_TO_INT_CONVERT
 }errLoadMap;
+struct LayerData* createLayer(char* jsonBuffer, int layer, int textureWidth, errLoadMap* err);
 
 #endif
