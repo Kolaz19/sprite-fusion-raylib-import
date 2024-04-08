@@ -3,13 +3,17 @@
 #include <stdlib.h>
 #include "loadMapData.h"
 
-struct TileData* createTile(cJSON* jsonTile, int textureWidth, int tileSize, errLoadMap* err) {
+void setTilePosition(int* x, int* y, int id, int tileSize, int amountTilesX) {
+
+}
+
+struct TileData* createTile(cJSON* jsonTile, int tileSize, int amountTilesX, errLoadMap* err) {
     struct TileData* tileData = malloc(sizeof(struct TileData));
 
     cJSON* property = cJSON_GetObjectItem(jsonTile, "x");
-    tileData->targetX = property->valueint;
+    tileData->targetX = property->valueint * tileSize;
     property = cJSON_GetObjectItem(jsonTile, "y");
-    tileData->targetY = property->valueint;
+    tileData->targetY = property->valueint * tileSize;
 
     //Convert ID string to int
     property = cJSON_GetObjectItem(jsonTile, "id");
@@ -23,7 +27,7 @@ struct TileData* createTile(cJSON* jsonTile, int textureWidth, int tileSize, err
 	    return NULL;
 	}
     }
-
+    setTilePosition(&tileData->targetX, &tileData->targetY, id, tileSize, amountTilesX);
 
     *err = OK;
     return tileData;
@@ -41,6 +45,7 @@ struct LayerData* createLayer(char* jsonBuffer, int layer, int textureWidth, err
 	*err = ERR_MISSING_PROPERTY;
 	goto cleanup;
     }
+    int amountTilesX = textureWidth / tileSize->valueint;
 
     cJSON* layers = cJSON_GetObjectItem(json, "layers");
     if (json == NULL) {
@@ -59,7 +64,7 @@ struct LayerData* createLayer(char* jsonBuffer, int layer, int textureWidth, err
     struct TileData* curTileData = NULL;
     cJSON* tile = NULL;
     cJSON_ArrayForEach(tile, tiles) {
-	curTileData = createTile(tile, textureWidth, tileSize->valueint, err);
+	curTileData = createTile(tile, tileSize->valueint, amountTilesX, err);
 	free(curTileData);
     }
 
