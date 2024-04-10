@@ -4,7 +4,8 @@
 #include "loadMapData.h"
 
 void setTilePosition(int* x, int* y, int id, int tileSize, int amountTilesX) {
-
+    *x = (id % amountTilesX) * tileSize;
+    *y = ((int)(id / amountTilesX)) * tileSize;
 }
 
 struct TileData* createTile(cJSON* jsonTile, int tileSize, int amountTilesX, errLoadMap* err) {
