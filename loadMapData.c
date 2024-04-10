@@ -3,12 +3,9 @@
 #include <stdlib.h>
 #include "loadMapData.h"
 
-void setTilePosition(int* x, int* y, int id, int tileSize, int amountTilesX) {
-    *x = (id % amountTilesX) * tileSize;
-    *y = ((int)(id / amountTilesX)) * tileSize;
-}
+static struct TileData* createTile(cJSON* jsonTile, int tileSize, int amountTilesX, errLoadMap* err);
 
-struct TileData* createTile(cJSON* jsonTile, int tileSize, int amountTilesX, errLoadMap* err) {
+static struct TileData* createTile(cJSON* jsonTile, int tileSize, int amountTilesX, errLoadMap* err) {
     struct TileData* tileData = malloc(sizeof(struct TileData));
 
     cJSON* property = cJSON_GetObjectItem(jsonTile, "x");
@@ -28,7 +25,9 @@ struct TileData* createTile(cJSON* jsonTile, int tileSize, int amountTilesX, err
 	    return NULL;
 	}
     }
-    setTilePosition(&tileData->targetX, &tileData->targetY, id, tileSize, amountTilesX);
+    tileData->sourceX = (id % amountTilesX) * tileSize;
+    tileData->sourceY = ((int)(id / amountTilesX)) * tileSize;
+    tileData->next = NULL;
 
     *err = OK;
     return tileData;
@@ -44,36 +43,58 @@ struct LayerData* createLayer(char* jsonBuffer, int layer, int textureWidth, err
     cJSON* tileSize = cJSON_GetObjectItem(json, "tileSize");
     if (json == NULL) {
 	*err = ERR_MISSING_PROPERTY;
-	goto cleanup;
+	cJSON_Delete(json);
+	return NULL;
     }
     int amountTilesX = textureWidth / tileSize->valueint;
 
     cJSON* layers = cJSON_GetObjectItem(json, "layers");
     if (json == NULL) {
 	*err = ERR_MISSING_PROPERTY;
-	goto cleanup;
+	cJSON_Delete(json);
+	return NULL;
     }
 
     cJSON* curLayer = cJSON_GetArrayItem(layers,layer);
     if (json == NULL) {
 	*err = ERR_LAYER_NOT_FOUND;
-	goto cleanup;
+	cJSON_Delete(json);
+	return NULL;
     }
 
     cJSON* tiles = cJSON_GetObjectItem(curLayer, "tiles");
 
     struct TileData* curTileData = NULL;
+    struct LayerData* layerData = malloc(sizeof(struct LayerData));
     cJSON* tile = NULL;
+
     cJSON_ArrayForEach(tile, tiles) {
-	curTileData = createTile(tile, tileSize->valueint, amountTilesX, err);
-	free(curTileData);
+	if (curTileData == NULL) {
+	    curTileData = createTile(tile, tileSize->valueint, amountTilesX, err);
+	    layerData->tileData = curTileData;
+	} else {
+	    curTileData->next = createTile(tile, tileSize->valueint, amountTilesX, err);
+	    curTileData = curTileData->next;
+	}
+	if (*err != OK) {
+	    unloadLayerData(layerData);
+	    cJSON_Delete(json);
+	    return NULL;
+	}
     }
 
     cJSON_Delete(json);
-
-cleanup:
-    cJSON_Delete(json);
-    return NULL;
+    return layerData;
 }
 
+void unloadLayerData(struct LayerData* layerData) {
+    struct TileData* curTileData = layerData->tileData;
+    struct TileData* nextTileData = curTileData;
 
+    while (nextTileData != NULL) {
+	curTileData = nextTileData;
+	nextTileData = nextTileData->next;
+	free(curTileData);
+    }
+    free(layerData);
+}

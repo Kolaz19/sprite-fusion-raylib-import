@@ -33,5 +33,6 @@ typedef enum errLoadMap {
     ERR_ID_TO_INT_CONVERT
 }errLoadMap;
 struct LayerData* createLayer(char* jsonBuffer, int layer, int textureWidth, errLoadMap* err);
+void unloadLayerData(struct LayerData* layerData);
 
 #endif
