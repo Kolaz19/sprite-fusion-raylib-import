@@ -8,12 +8,12 @@ struct TileData {
     int targetY;
     float sourceX;
     float sourceY;
-    struct TileData* next;
 };
 
 struct LayerData {
     char* name;
     bool collisionLayer;
+    int amountOfTiles;
     struct TileData* tileData;
 };
 

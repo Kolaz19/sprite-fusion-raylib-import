@@ -3,11 +3,9 @@
 #include <stdlib.h>
 #include "loadMapData.h"
 
-static struct TileData* createTile(cJSON* jsonTile, int tileSize, int amountTilesX, errLoadMap* err);
+errLoadMap initTileData(struct TileData* tileData, cJSON* jsonTile, int tileSize, int amountTilesX);
 
-static struct TileData* createTile(cJSON* jsonTile, int tileSize, int amountTilesX, errLoadMap* err) {
-    struct TileData* tileData = malloc(sizeof(struct TileData));
-
+errLoadMap initTileData(struct TileData* tileData, cJSON* jsonTile, int tileSize, int amountTilesX) {
     cJSON* property = cJSON_GetObjectItem(jsonTile, "x");
     tileData->targetX = property->valueint * tileSize;
     property = cJSON_GetObjectItem(jsonTile, "y");
@@ -21,16 +19,13 @@ static struct TileData* createTile(cJSON* jsonTile, int tileSize, int amountTile
 	id = strtol(property->valuestring, &strEnd , 10);
 	if (id == 0) {
 	    free(tileData);
-	    *err = ERR_ID_TO_INT_CONVERT;
-	    return NULL;
+	    return ERR_ID_TO_INT_CONVERT;
 	}
     }
     tileData->sourceX = (id % amountTilesX) * tileSize;
     tileData->sourceY = ((int)(id / amountTilesX)) * tileSize;
-    tileData->next = NULL;
 
-    *err = OK;
-    return tileData;
+    return OK;
 }
 
 struct LayerData* createLayer(char* jsonBuffer, int layer, int textureWidth, errLoadMap* err) {
@@ -64,18 +59,15 @@ struct LayerData* createLayer(char* jsonBuffer, int layer, int textureWidth, err
 
     cJSON* tiles = cJSON_GetObjectItem(curLayer, "tiles");
 
-    struct TileData* curTileData = NULL;
     struct LayerData* layerData = malloc(sizeof(struct LayerData));
     cJSON* tile = NULL;
+    layerData->amountOfTiles = cJSON_GetArraySize(tiles);
+    layerData->tileData = malloc(layerData->amountOfTiles * sizeof(struct TileData));
+    int curTileIndex = 0;
 
     cJSON_ArrayForEach(tile, tiles) {
-	if (curTileData == NULL) {
-	    curTileData = createTile(tile, tileSize->valueint, amountTilesX, err);
-	    layerData->tileData = curTileData;
-	} else {
-	    curTileData->next = createTile(tile, tileSize->valueint, amountTilesX, err);
-	    curTileData = curTileData->next;
-	}
+	*err = initTileData(layerData->tileData+curTileIndex, tile, tileSize->valueint, amountTilesX);
+	curTileIndex++;
 	if (*err != OK) {
 	    unloadLayerData(layerData);
 	    cJSON_Delete(json);
@@ -88,13 +80,6 @@ struct LayerData* createLayer(char* jsonBuffer, int layer, int textureWidth, err
 }
 
 void unloadLayerData(struct LayerData* layerData) {
-    struct TileData* curTileData = layerData->tileData;
-    struct TileData* nextTileData = curTileData;
-
-    while (nextTileData != NULL) {
-	curTileData = nextTileData;
-	nextTileData = nextTileData->next;
-	free(curTileData);
-    }
+    free(layerData->tileData);
     free(layerData);
 }
