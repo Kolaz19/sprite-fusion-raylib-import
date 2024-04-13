@@ -4,15 +4,15 @@
 //#include "include/raylib.h"
 
 struct TileData {
-    int targetX;
-    int targetY;
+    float targetX;
+    float targetY;
     float sourceX;
     float sourceY;
 };
 
 struct LayerData {
     char* name;
-    bool collisionLayer;
+    bool isCollisionLayer;
     int amountOfTiles;
     struct TileData* tileData;
 };
@@ -32,6 +32,7 @@ typedef enum errLoadMap {
     ERR_LAYER_NOT_FOUND,
     ERR_ID_TO_INT_CONVERT
 }errLoadMap;
+
 struct LayerData* createLayer(char* jsonBuffer, int layer, int textureWidth, errLoadMap* err);
 void unloadLayerData(struct LayerData* layerData);
 

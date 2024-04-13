@@ -6,12 +6,13 @@
 errLoadMap initTileData(struct TileData* tileData, cJSON* jsonTile, int tileSize, int amountTilesX);
 
 errLoadMap initTileData(struct TileData* tileData, cJSON* jsonTile, int tileSize, int amountTilesX) {
+    //Set X and Y property of target
     cJSON* property = cJSON_GetObjectItem(jsonTile, "x");
     tileData->targetX = property->valueint * tileSize;
     property = cJSON_GetObjectItem(jsonTile, "y");
     tileData->targetY = property->valueint * tileSize;
 
-    //Convert ID string to int
+    //Convert ID string to int and calculate source tile
     property = cJSON_GetObjectItem(jsonTile, "id");
     int id = 0;
     if (*(property->valuestring) != '0') {
@@ -36,33 +37,48 @@ struct LayerData* createLayer(char* jsonBuffer, int layer, int textureWidth, err
     }
 
     cJSON* tileSize = cJSON_GetObjectItem(json, "tileSize");
-    if (json == NULL) {
+    if (tileSize == NULL) {
 	*err = ERR_MISSING_PROPERTY;
 	cJSON_Delete(json);
 	return NULL;
     }
-    int amountTilesX = textureWidth / tileSize->valueint;
 
     cJSON* layers = cJSON_GetObjectItem(json, "layers");
-    if (json == NULL) {
+    if (layers == NULL) {
 	*err = ERR_MISSING_PROPERTY;
 	cJSON_Delete(json);
 	return NULL;
     }
 
     cJSON* curLayer = cJSON_GetArrayItem(layers,layer);
-    if (json == NULL) {
+    if (curLayer == NULL) {
 	*err = ERR_LAYER_NOT_FOUND;
 	cJSON_Delete(json);
 	return NULL;
     }
 
     cJSON* tiles = cJSON_GetObjectItem(curLayer, "tiles");
+    if (curLayer == NULL) {
+	*err = ERR_MISSING_PROPERTY;
+	cJSON_Delete(json);
+	return NULL;
+    }
 
+    cJSON* collision = cJSON_GetObjectItem(curLayer, "collider");
+    if (collision == NULL) {
+	*err = ERR_MISSING_PROPERTY;
+	cJSON_Delete(json);
+	return NULL;
+    }
+
+    //We have all the required properties, now initialize the layer data
     struct LayerData* layerData = malloc(sizeof(struct LayerData));
     cJSON* tile = NULL;
+
     layerData->amountOfTiles = cJSON_GetArraySize(tiles);
     layerData->tileData = malloc(layerData->amountOfTiles * sizeof(struct TileData));
+    layerData->isCollisionLayer = cJSON_IsTrue(collision);
+    int amountTilesX = textureWidth / tileSize->valueint;
     int curTileIndex = 0;
 
     cJSON_ArrayForEach(tile, tiles) {
