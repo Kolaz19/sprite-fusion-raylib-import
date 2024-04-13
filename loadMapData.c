@@ -3,31 +3,8 @@
 #include <stdlib.h>
 #include "loadMapData.h"
 
-errLoadMap initTileData(struct TileData* tileData, cJSON* jsonTile, int tileSize, int amountTilesX);
+static errLoadMap initTileData(struct TileData* tileData, cJSON* jsonTile, int tileSize, int amountTilesX);
 
-errLoadMap initTileData(struct TileData* tileData, cJSON* jsonTile, int tileSize, int amountTilesX) {
-    //Set X and Y property of target
-    cJSON* property = cJSON_GetObjectItem(jsonTile, "x");
-    tileData->targetX = property->valueint * tileSize;
-    property = cJSON_GetObjectItem(jsonTile, "y");
-    tileData->targetY = property->valueint * tileSize;
-
-    //Convert ID string to int and calculate source tile
-    property = cJSON_GetObjectItem(jsonTile, "id");
-    int id = 0;
-    if (*(property->valuestring) != '0') {
-	char* strEnd = NULL;
-	id = strtol(property->valuestring, &strEnd , 10);
-	if (id == 0) {
-	    free(tileData);
-	    return ERR_ID_TO_INT_CONVERT;
-	}
-    }
-    tileData->sourceX = (id % amountTilesX) * tileSize;
-    tileData->sourceY = ((int)(id / amountTilesX)) * tileSize;
-
-    return OK;
-}
 
 struct LayerData* createLayer(char* jsonBuffer, int layer, int textureWidth, errLoadMap* err) {
     cJSON* json = cJSON_Parse(jsonBuffer);
@@ -93,6 +70,48 @@ struct LayerData* createLayer(char* jsonBuffer, int layer, int textureWidth, err
 
     cJSON_Delete(json);
     return layerData;
+}
+
+errLoadMap initTileData(struct TileData* tileData, cJSON* jsonTile, int tileSize, int amountTilesX) {
+    //Set X and Y property of target
+    cJSON* property = cJSON_GetObjectItem(jsonTile, "x");
+    tileData->targetX = property->valueint * tileSize;
+    property = cJSON_GetObjectItem(jsonTile, "y");
+    tileData->targetY = property->valueint * tileSize;
+
+    //Convert ID string to int and calculate source tile
+    property = cJSON_GetObjectItem(jsonTile, "id");
+    int id = 0;
+    if (*(property->valuestring) != '0') {
+	char* strEnd = NULL;
+	id = strtol(property->valuestring, &strEnd , 10);
+	if (id == 0) {
+	    free(tileData);
+	    return ERR_ID_TO_INT_CONVERT;
+	}
+    }
+    tileData->sourceX = (id % amountTilesX) * tileSize;
+    tileData->sourceY = ((int)(id / amountTilesX)) * tileSize;
+
+    return OK;
+}
+
+int getNumberOfLayers(char* jsonBuffer, errLoadMap *err) {
+    cJSON* json = cJSON_Parse(jsonBuffer);
+    if (json == NULL) {
+	*err = ERR_PARSE;
+	return 0;
+    }
+
+    cJSON* layers = cJSON_GetObjectItem(json, "layers");
+    if (layers == NULL) {
+	cJSON_Delete(json);
+	*err = ERR_MISSING_PROPERTY;
+	return 0;
+    }
+
+    *err = OK;
+    return cJSON_GetArraySize(layers);
 }
 
 void unloadLayerData(struct LayerData* layerData) {
