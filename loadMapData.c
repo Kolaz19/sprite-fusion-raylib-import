@@ -114,7 +114,7 @@ int getNumberOfLayers(char* jsonBuffer, errLoadMap *err) {
     return cJSON_GetArraySize(layers);
 }
 
-void unloadLayerData(struct LayerData* layerData) {
+void unloadLayer(struct LayerData* layerData) {
     free(layerData->tileData);
     free(layerData);
 }

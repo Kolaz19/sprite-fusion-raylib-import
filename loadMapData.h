@@ -1,7 +1,6 @@
 #ifndef LOADMAP_H
 #define LOADMAP_H
 #include <stdbool.h>
-//#include "include/raylib.h"
 
 struct TileData {
     float targetX;
@@ -17,14 +16,6 @@ struct LayerData {
     struct TileData* tileData;
 };
 
-/*
-struct TileMap {
-    Texture2D texture;
-    int numberLayers;
-    struct LayerData* layerData;
-};
-*/
-
 typedef enum errLoadMap {
     OK = 1,
     ERR_PARSE,
@@ -34,7 +25,7 @@ typedef enum errLoadMap {
 }errLoadMap;
 
 struct LayerData* createLayer(char* jsonBuffer, int layer, int textureWidth, errLoadMap* err);
-void unloadLayerData(struct LayerData* layerData);
+void unloadLayer(struct LayerData* layerData);
 int getNumberOfLayers(char* jsonBuffer, errLoadMap *err);
 
 #endif

@@ -1,7 +1,11 @@
 #include "tilemapSF.h"
+#include "loadMapData.h"
 #include <stdio.h>
 
 static int readFromFile(char* buf, char* filename, int buflen);
+
+TileMap* createMap(char* textureFileName, char* jsonFileName) {
+}
 
 
 static int readFromFile(char* buf, char* filename, int buflen) {
