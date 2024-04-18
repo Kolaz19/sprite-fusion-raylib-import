@@ -62,7 +62,7 @@ struct LayerData* createLayer(char* jsonBuffer, int layer, int textureWidth, err
 	*err = initTileData(layerData->tileData+curTileIndex, tile, tileSize->valueint, amountTilesX);
 	curTileIndex++;
 	if (*err != OK) {
-	    unloadLayerData(layerData);
+	    unloadLayer(layerData);
 	    cJSON_Delete(json);
 	    return NULL;
 	}
@@ -111,7 +111,9 @@ int getNumberOfLayers(char* jsonBuffer, errLoadMap *err) {
     }
 
     *err = OK;
-    return cJSON_GetArraySize(layers);
+    int numberOfLayers = cJSON_GetArraySize(layers);
+    cJSON_Delete(layers);
+    return numberOfLayers;
 }
 
 void unloadLayer(struct LayerData* layerData) {
