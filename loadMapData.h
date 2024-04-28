@@ -1,6 +1,8 @@
 #ifndef LOADMAP_H
 #define LOADMAP_H
 #include <stdbool.h>
+//For error codes
+#include "tilemapSF.h"
 
 struct TileData {
     float targetX;
@@ -16,16 +18,8 @@ struct LayerData {
     struct TileData* tileData;
 };
 
-typedef enum errLoadMap {
-    OK = 1,
-    ERR_PARSE,
-    ERR_MISSING_PROPERTY,
-    ERR_LAYER_NOT_FOUND,
-    ERR_ID_TO_INT_CONVERT
-}errLoadMap;
-
-struct LayerData* createLayer(char* jsonBuffer, int layer, int textureWidth, errLoadMap* err);
+struct LayerData* createLayer(char* jsonBuffer, int layer, int textureWidth, errTileMap* err);
 void unloadLayer(struct LayerData* layerData);
-int getNumberOfLayers(char* jsonBuffer, errLoadMap *err);
+int getNumberOfLayers(char* jsonBuffer, errTileMap *err);
 
 #endif

@@ -3,10 +3,9 @@
 #include <stdlib.h>
 #include "loadMapData.h"
 
-static errLoadMap initTileData(struct TileData* tileData, cJSON* jsonTile, int tileSize, int amountTilesX);
+static errTileMap initTileData(struct TileData* tileData, cJSON* jsonTile, int tileSize, int amountTilesX);
 
-
-struct LayerData* createLayer(char* jsonBuffer, int layer, int textureWidth, errLoadMap* err) {
+struct LayerData* createLayer(char* jsonBuffer, int layer, int textureWidth, errTileMap* err) {
     cJSON* json = cJSON_Parse(jsonBuffer);
     if (json == NULL) {
 	*err = ERR_PARSE;
@@ -61,7 +60,7 @@ struct LayerData* createLayer(char* jsonBuffer, int layer, int textureWidth, err
     cJSON_ArrayForEach(tile, tiles) {
 	*err = initTileData(layerData->tileData+curTileIndex, tile, tileSize->valueint, amountTilesX);
 	curTileIndex++;
-	if (*err != OK) {
+	if (*err != OK_) {
 	    unloadLayer(layerData);
 	    cJSON_Delete(json);
 	    return NULL;
@@ -72,7 +71,7 @@ struct LayerData* createLayer(char* jsonBuffer, int layer, int textureWidth, err
     return layerData;
 }
 
-errLoadMap initTileData(struct TileData* tileData, cJSON* jsonTile, int tileSize, int amountTilesX) {
+errTileMap initTileData(struct TileData* tileData, cJSON* jsonTile, int tileSize, int amountTilesX) {
     //Set X and Y property of target
     cJSON* property = cJSON_GetObjectItem(jsonTile, "x");
     tileData->targetX = property->valueint * tileSize;
@@ -96,7 +95,7 @@ errLoadMap initTileData(struct TileData* tileData, cJSON* jsonTile, int tileSize
     return OK;
 }
 
-int getNumberOfLayers(char* jsonBuffer, errLoadMap *err) {
+int getNumberOfLayers(char* jsonBuffer, errTileMap *err) {
     cJSON* json = cJSON_Parse(jsonBuffer);
     if (json == NULL) {
 	*err = ERR_PARSE;
