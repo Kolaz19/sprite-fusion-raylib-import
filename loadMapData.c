@@ -1,6 +1,7 @@
 #include "include/cJSON.h" 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "loadMapData.h"
 
 static errTileMap initTileData(struct TileData* tileData, cJSON* jsonTile, int tileSize, int amountTilesX);
@@ -26,9 +27,17 @@ struct LayerData* createLayer(char* jsonBuffer, int layer, int textureWidth, err
 	return NULL;
     }
 
+
     cJSON* curLayer = cJSON_GetArrayItem(layers,layer);
     if (curLayer == NULL) {
 	*err = ERR_LAYER_NOT_FOUND;
+	cJSON_Delete(json);
+	return NULL;
+    }
+
+    cJSON* name = cJSON_GetObjectItem(curLayer, "name");
+    if (name == NULL) {
+	*err = ERR_MISSING_PROPERTY;
 	cJSON_Delete(json);
 	return NULL;
     }
@@ -51,6 +60,9 @@ struct LayerData* createLayer(char* jsonBuffer, int layer, int textureWidth, err
     struct LayerData* layerData = malloc(sizeof(struct LayerData));
     cJSON* tile = NULL;
 
+    layerData->name = malloc(strlen(name->string)+1);
+    strcpy(layerData->name, cJSON_GetStringValue(name));
+
     layerData->amountOfTiles = cJSON_GetArraySize(tiles);
     layerData->tileData = malloc(layerData->amountOfTiles * sizeof(struct TileData));
     layerData->isCollisionLayer = cJSON_IsTrue(collision);
@@ -60,7 +72,7 @@ struct LayerData* createLayer(char* jsonBuffer, int layer, int textureWidth, err
     cJSON_ArrayForEach(tile, tiles) {
 	*err = initTileData(layerData->tileData+curTileIndex, tile, tileSize->valueint, amountTilesX);
 	curTileIndex++;
-	if (*err != OK_) {
+	if (*err != OK) {
 	    unloadLayer(layerData);
 	    cJSON_Delete(json);
 	    return NULL;
@@ -117,5 +129,6 @@ int getNumberOfLayers(char* jsonBuffer, errTileMap *err) {
 
 void unloadLayer(struct LayerData* layerData) {
     free(layerData->tileData);
+    free(layerData->name);
     free(layerData);
 }

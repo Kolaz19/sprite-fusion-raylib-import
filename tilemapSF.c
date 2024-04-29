@@ -10,26 +10,62 @@ static int readFromFile(char* buf, char* filename, int buflen);
 TileMap* createMap(char* textureFileName, char* jsonFileName, errTileMap* err) {
     *err = OK;
     TileMap* map = malloc(sizeof(TileMap));
+    //Load texture
     map->texture = LoadTexture(textureFileName);
     if (map->texture.id <= 0) {
 	*err = ERR_TEXTURE_LOAD;
 	return NULL;
     }
-
+    //Load number of layers
     char jsonBuffer[JSON_LEN];
+    readFromFile(jsonBuffer, jsonFileName, JSON_LEN);
     map->numberLayers = getNumberOfLayers(jsonBuffer, err);
-    if (!err) {
+    if (*err != OK) {
 	UnloadTexture(map->texture);
 	free(map);
 	return NULL;
     }
+    //Create layers
+    struct LayerData** curLayer;
+    map->layerData = malloc(sizeof(struct LayerData*) * map->numberLayers);
+    for (int i = 0; i < map->numberLayers; i++) {
+	curLayer = map->layerData + i;
+	*curLayer = createLayer(jsonBuffer, i, map->texture.width, err);
+	if (*err != OK) {
+	    for (int inner = 0; inner < i; inner++) {
+		unloadLayer((*map->layerData)+inner);
+	    }
+	    free(map->layerData);
+	    UnloadTexture(map->texture);
+	    free(map);
+	    return NULL;
+	}
+    }
 
-    map->layerData = malloc(sizeof(struct LayerData) * map->numberLayers);
-
-    
     return map;
 }
 
+void printMapData(TileMap* map) {
+    printf("Number of Layers:\t%d\n",map->numberLayers);
+    struct LayerData* ld;
+    for (int i = 0; i < map->numberLayers; i++) {
+	ld = *(map->layerData+i);
+	printf("Name:\t%s\n",ld->name);
+
+	for (int k = 0; k < ld->amountOfTiles; k++) {
+	    printf("SourceX:%f\tSourceY:%f\tTargetX:%f\tTargetY:%f\n",(ld->tileData+k)->sourceX, (ld->tileData+k)->sourceY, (ld->tileData+k)->targetX, (ld->tileData+k)->targetY);
+	}
+    }
+}
+
+void unloadMap(TileMap* map) {
+    for (int i = 0; i < map->numberLayers; i++) {
+	unloadLayer(*(map->layerData+i));
+    }
+    free(map->layerData);
+    UnloadTexture(map->texture);
+    free(map);
+}
 
 static int readFromFile(char* buf, char* filename, int buflen) {
     FILE* file = fopen(filename,"r");

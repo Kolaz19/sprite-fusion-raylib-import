@@ -4,7 +4,7 @@
 #include "include/raylib.h"
 #define JSON_LEN 10000
 
-typedef struct LayerData* LD;
+typedef struct LayerData** LD;
 
 typedef struct TileMap {
     Texture2D texture;
@@ -21,5 +21,8 @@ typedef enum errTileMap {
     ERR_TEXTURE_LOAD	       
 }errTileMap;
 
+TileMap* createMap(char* textureFileName, char* jsonFileName, errTileMap* err);
+void unloadMap(TileMap* map);
+void printMapData(TileMap* map);
 
 #endif
