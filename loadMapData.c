@@ -64,6 +64,7 @@ struct LayerData* createLayer(char* jsonBuffer, int layer, int textureWidth, err
     strcpy(layerData->name, cJSON_GetStringValue(name));
 
     layerData->amountOfTiles = cJSON_GetArraySize(tiles);
+    layerData->tileSize = tileSize->valueint;
     layerData->tileData = malloc(layerData->amountOfTiles * sizeof(struct TileData));
     layerData->isCollisionLayer = cJSON_IsTrue(collision);
     int amountTilesX = textureWidth / tileSize->valueint;

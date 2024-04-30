@@ -14,6 +14,7 @@ struct TileData {
 struct LayerData {
     char* name;
     bool isCollisionLayer;
+    int tileSize;
     int amountOfTiles;
     struct TileData* tileData;
 };

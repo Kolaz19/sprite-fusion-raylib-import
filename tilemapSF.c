@@ -3,6 +3,7 @@
 #include "loadMapData.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 static int readFromFile(char* buf, char* filename, int buflen);
 
@@ -51,10 +52,30 @@ void printMapData(TileMap* map) {
     for (int i = 0; i < map->numberLayers; i++) {
 	ld = *(map->layerData+i);
 	printf("Name:\t%s\n",ld->name);
+	printf("Number of layers:\t%d\n", map->numberLayers);
 
 	for (int k = 0; k < ld->amountOfTiles; k++) {
-	    printf("SourceX:%f\tSourceY:%f\tTargetX:%f\tTargetY:%f\n",(ld->tileData+k)->sourceX, (ld->tileData+k)->sourceY, (ld->tileData+k)->targetX, (ld->tileData+k)->targetY);
+	    //printf("SourceX:%f\tSourceY:%f\tTargetX:%f\tTargetY:%f\n",(ld->tileData+k)->sourceX, (ld->tileData+k)->sourceY, (ld->tileData+k)->targetX, (ld->tileData+k)->targetY);
 	}
+    }
+}
+
+void renderLayer(TileMap* map, const char* layerName) {
+    struct LayerData* ld = NULL;
+    for (int i = 0; i < map->numberLayers; i++) {
+	if (!strcmp(layerName, (*(map->layerData+i))->name)) {
+	    ld = *(map->layerData+i);
+	    break;
+	}
+    }
+    if (ld == NULL) {
+	return;
+    }
+
+    struct TileData* td;
+    for (int i = 0; i < ld->amountOfTiles; i++) {
+	td = ld->tileData+i;
+	DrawTexturePro(map->texture, (Rectangle){td->sourceX,td->sourceY,ld->tileSize,ld->tileSize}, (Rectangle){td->targetX,td->targetY,ld->tileSize,ld->tileSize}, (Vector2){0,0}, 0, RAYWHITE);
     }
 }
 
