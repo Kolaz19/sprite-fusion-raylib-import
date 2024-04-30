@@ -55,12 +55,12 @@ void printMapData(TileMap* map) {
 	printf("Number of layers:\t%d\n", map->numberLayers);
 
 	for (int k = 0; k < ld->amountOfTiles; k++) {
-	    //printf("SourceX:%f\tSourceY:%f\tTargetX:%f\tTargetY:%f\n",(ld->tileData+k)->sourceX, (ld->tileData+k)->sourceY, (ld->tileData+k)->targetX, (ld->tileData+k)->targetY);
+	    printf("SourceX:%f\tSourceY:%f\tTargetX:%f\tTargetY:%f\n",(ld->tileData+k)->sourceX, (ld->tileData+k)->sourceY, (ld->tileData+k)->targetX, (ld->tileData+k)->targetY);
 	}
     }
 }
 
-void renderLayer(TileMap* map, const char* layerName) {
+void renderLayer(TileMap* map, const char* layerName, Vector2 pos, float zoom) {
     struct LayerData* ld = NULL;
     for (int i = 0; i < map->numberLayers; i++) {
 	if (!strcmp(layerName, (*(map->layerData+i))->name)) {
@@ -75,7 +75,13 @@ void renderLayer(TileMap* map, const char* layerName) {
     struct TileData* td;
     for (int i = 0; i < ld->amountOfTiles; i++) {
 	td = ld->tileData+i;
-	DrawTexturePro(map->texture, (Rectangle){td->sourceX,td->sourceY,ld->tileSize,ld->tileSize}, (Rectangle){td->targetX,td->targetY,ld->tileSize,ld->tileSize}, (Vector2){0,0}, 0, RAYWHITE);
+	//float shiftX = 
+	DrawTexturePro(map->texture, 
+		(Rectangle){td->sourceX,td->sourceY,ld->tileSize,ld->tileSize},
+		(Rectangle){(td->targetX * zoom) + pos.x ,(td->targetY * zoom) + pos.y, ld->tileSize * zoom,ld->tileSize * zoom}, 
+		(Vector2){0,0}, 
+		0, 
+		RAYWHITE);
     }
 }
 

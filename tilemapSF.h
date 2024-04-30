@@ -24,6 +24,6 @@ typedef enum errTileMap {
 TileMap* createMap(char* textureFileName, char* jsonFileName, errTileMap* err);
 void unloadMap(TileMap* map);
 void printMapData(TileMap* map);
-void renderLayer(TileMap* map, const char* layerName);
+void renderLayer(TileMap* map, const char* layerName, Vector2 pos, float zoom);
 
 #endif
