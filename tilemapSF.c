@@ -7,7 +7,6 @@
 
 static int readFromFile(char* buf, char* filename, int buflen);
 
-
 TileMap* createMap(char* textureFileName, char* jsonFileName, errTileMap* err) {
     *err = OK;
     TileMap* map = malloc(sizeof(TileMap));
@@ -17,21 +16,24 @@ TileMap* createMap(char* textureFileName, char* jsonFileName, errTileMap* err) {
 	*err = ERR_TEXTURE_LOAD;
 	return NULL;
     }
-    //Load number of layers
+    //Load JSON
     char jsonBuffer[JSON_LEN];
     readFromFile(jsonBuffer, jsonFileName, JSON_LEN);
+
+    //Load number of layers
     map->numberLayers = getNumberOfLayers(jsonBuffer, err);
     if (*err != OK) {
 	UnloadTexture(map->texture);
 	free(map);
 	return NULL;
     }
+
     //Create layers
     struct LayerData** curLayer;
     map->layerData = malloc(sizeof(struct LayerData*) * map->numberLayers);
     for (int i = 0; i < map->numberLayers; i++) {
 	curLayer = map->layerData + i;
-	*curLayer = createLayer(jsonBuffer, i, map->texture.width, err);
+	*curLayer = createLayer(jsonBuffer, i+1, map->texture.width, err);
 	if (*err != OK) {
 	    for (int inner = 0; inner < i; inner++) {
 		unloadLayer((*map->layerData)+inner);
@@ -42,7 +44,6 @@ TileMap* createMap(char* textureFileName, char* jsonFileName, errTileMap* err) {
 	    return NULL;
 	}
     }
-
     return map;
 }
 

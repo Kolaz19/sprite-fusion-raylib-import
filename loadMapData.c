@@ -1,131 +1,177 @@
-#include "include/cJSON.h" 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "loadMapData.h"
+#include "include/jsmn.h"
+#include "tilemapSF.h"
 
-static errTileMap initTileData(struct TileData* tileData, cJSON* jsonTile, int tileSize, int amountTilesX);
+struct LayerData* createLayer(char* jsonString, int layer, int textureWidth, errTileMap* err) {
 
-struct LayerData* createLayer(char* jsonBuffer, int layer, int textureWidth, errTileMap* err) {
-    cJSON* json = cJSON_Parse(jsonBuffer);
-    if (json == NULL) {
+    jsmn_parser p;
+    jsmntok_t t[JSON_MAX_TOKEN];
+    jsmn_init(&p);
+    int amountTokens = jsmn_parse(&p, jsonString, strlen(jsonString), t, JSON_MAX_TOKEN);
+    if (amountTokens < 0) {
 	*err = ERR_PARSE;
 	return NULL;
     }
+    jsmntok_t* layerStart = t;
+    int curLayerNumber = 0;
 
-    cJSON* tileSize = cJSON_GetObjectItem(json, "tileSize");
-    if (tileSize == NULL) {
-	*err = ERR_MISSING_PROPERTY;
-	cJSON_Delete(json);
-	return NULL;
-    }
-
-    cJSON* layers = cJSON_GetObjectItem(json, "layers");
-    if (layers == NULL) {
-	*err = ERR_MISSING_PROPERTY;
-	cJSON_Delete(json);
-	return NULL;
-    }
-
-
-    cJSON* curLayer = cJSON_GetArrayItem(layers,layer);
-    if (curLayer == NULL) {
-	*err = ERR_LAYER_NOT_FOUND;
-	cJSON_Delete(json);
-	return NULL;
-    }
-
-    cJSON* name = cJSON_GetObjectItem(curLayer, "name");
-    if (name == NULL) {
-	*err = ERR_MISSING_PROPERTY;
-	cJSON_Delete(json);
-	return NULL;
-    }
-
-    cJSON* tiles = cJSON_GetObjectItem(curLayer, "tiles");
-    if (curLayer == NULL) {
-	*err = ERR_MISSING_PROPERTY;
-	cJSON_Delete(json);
-	return NULL;
-    }
-
-    cJSON* collision = cJSON_GetObjectItem(curLayer, "collider");
-    if (collision == NULL) {
-	*err = ERR_MISSING_PROPERTY;
-	cJSON_Delete(json);
-	return NULL;
-    }
-
-    //We have all the required properties, now initialize the layer data
     struct LayerData* layerData = malloc(sizeof(struct LayerData));
-    cJSON* tile = NULL;
+    layerData->tileSize = 0;
 
-    layerData->name = malloc(strlen(name->string)+1);
-    strcpy(layerData->name, cJSON_GetStringValue(name));
+    //Skip to startOfLayers
+    while(layerStart != t+amountTokens-1) {
+	 if (strncmp(jsonString + layerStart->start, "layers", layerStart->end - layerStart->start) == 0) {
+	    layerStart += 2;
+	    break;
+	 } else if (strncmp(jsonString + layerStart->start, "tileSize", layerStart->end - layerStart->start) == 0) {
+	    layerData->tileSize = strtol(jsonString + (layerStart+1)->start, NULL, 0);
+	 }
+	 layerStart++;
+    }
 
-    layerData->amountOfTiles = cJSON_GetArraySize(tiles);
-    layerData->tileSize = tileSize->valueint;
+    if (layerStart == t+amountTokens-1 || layerData->tileSize == 0) {
+	*err = ERR_MISSING_PROPERTY;
+	free(layerData);
+	return NULL;
+    }
+
+    //Skip to selected layer (specifically name property)
+    while(layerStart != t+amountTokens-1) {
+	if (strncmp(jsonString + layerStart->start, "name", layerStart->end - layerStart->start) == 0) {
+	    //printf("LayerName:\t%.*s\n", (layerStart+1)->end - (layerStart+1)->start, jsonString + (layerStart+1)->start);
+	    curLayerNumber++;
+	    if (curLayerNumber == layer) {
+		break;
+	    }
+	} else if (layerStart->type == JSMN_ARRAY) {
+	    //Skip every tiles-array forward that is not current layer
+	    layerStart += layerStart->size * 7;
+	}
+	layerStart++;
+    }
+
+    if (layerStart == t+amountTokens-1) {
+	*err = ERR_LAYER_NOT_FOUND;
+	free(layerData);
+	return NULL;
+    }
+
+    //Name of layer
+    int lenName = (layerStart+1)->end - (layerStart+1)->start;
+    layerData->name = malloc(lenName+1);
+    strncpy(layerData->name, jsonString + (layerStart+1)->start, lenName); 
+    layerData->name[lenName] = '\0';
+    //printf("Name:\t%s\n", layerData->name);
+
+    //Tiles
+    if (strncmp(jsonString + (layerStart+2)->start, "tiles", (layerStart+2)->end - (layerStart+2)->start) != 0) {
+	*err = ERR_MISSING_PROPERTY;
+	free(layerData->name);
+	free(layerData);
+	return NULL;
+    }
+
+    layerData->amountOfTiles = (layerStart+3)->size;
     layerData->tileData = malloc(layerData->amountOfTiles * sizeof(struct TileData));
-    layerData->isCollisionLayer = cJSON_IsTrue(collision);
-    int amountTilesX = textureWidth / tileSize->valueint;
-    int curTileIndex = 0;
 
-    cJSON_ArrayForEach(tile, tiles) {
-	*err = initTileData(layerData->tileData+curTileIndex, tile, tileSize->valueint, amountTilesX);
-	curTileIndex++;
-	if (*err != OK) {
-	    unloadLayer(layerData);
-	    cJSON_Delete(json);
+    //Start at array
+    jsmntok_t* tileData = layerStart+3;
+    int arrayIndex = 0;
+    int id = 0, x = 0, y = 0;
+    for (int i = 0, curProperty = 1, amountAssigned = 0; i < layerData->amountOfTiles; i++, curProperty = 1, amountAssigned = 0) {
+	while(curProperty != 7) {
+	    arrayIndex = (i * 7) + curProperty;
+	    if (strncmp(jsonString + (tileData+arrayIndex)->start, "id", (tileData+arrayIndex)->end - (tileData+arrayIndex)->start) == 0) {
+		id = strtol(jsonString + (tileData+arrayIndex+1)->start, NULL, 0);
+		(layerData->tileData+i)->sourceX = (id % (textureWidth / layerData->tileSize)) * layerData->tileSize;
+		(layerData->tileData+i)->sourceY = (int)(id / (textureWidth / layerData->tileSize)) * layerData->tileSize;
+		amountAssigned++;
+	    } else if (strncmp(jsonString + (tileData+arrayIndex)->start, "x", (tileData+arrayIndex)->end - (tileData+arrayIndex)->start) == 0) {
+		x = strtol(jsonString + (tileData+arrayIndex+1)->start, NULL, 0);
+		(layerData->tileData+i)->targetX = x * layerData->tileSize;
+		amountAssigned++;
+	    } else if (strncmp(jsonString + (tileData+arrayIndex)->start, "y", (tileData+arrayIndex)->end - (tileData+arrayIndex)->start) == 0) {
+		y = strtol(jsonString + (tileData+arrayIndex+1)->start, NULL, 0);
+		(layerData->tileData+i)->targetY = y * layerData->tileSize;
+		amountAssigned++;
+	    }
+	    curProperty++;
+	}
+	if (amountAssigned != 3) {
+	    *err = ERR_TILEDATA_MISSING;
+	    free(layerData->tileData);
+	    free(layerData->name);
+	    free(layerData);
 	    return NULL;
 	}
     }
 
-    cJSON_Delete(json);
+    //Get collision data
+    tileData += tileData->size * 7 + 1;
+    if (strncmp(jsonString + (tileData)->start, "collider", (tileData)->end - (tileData)->start) == 0) {
+	if(strncmp(jsonString + (tileData+1)->start, "true", (tileData+1)->end - (tileData+1)->start) == 0) {
+	    layerData->isCollisionLayer = true;
+	} else {
+	    layerData->isCollisionLayer = false;
+	}
+    } else {
+	*err = ERR_MISSING_PROPERTY;
+	free(layerData->tileData);
+	free(layerData->name);
+	free(layerData);
+	return NULL;
+    }
+    
     return layerData;
 }
 
-errTileMap initTileData(struct TileData* tileData, cJSON* jsonTile, int tileSize, int amountTilesX) {
-    //Set X and Y property of target
-    cJSON* property = cJSON_GetObjectItem(jsonTile, "x");
-    tileData->targetX = property->valueint * tileSize;
-    property = cJSON_GetObjectItem(jsonTile, "y");
-    tileData->targetY = property->valueint * tileSize;
 
-    //Convert ID string to int and calculate source tile
-    property = cJSON_GetObjectItem(jsonTile, "id");
-    int id = 0;
-    if (*(property->valuestring) != '0') {
-	char* strEnd = NULL;
-	id = strtol(property->valuestring, &strEnd , 10);
-	if (id == 0) {
-	    free(tileData);
-	    return ERR_ID_TO_INT_CONVERT;
-	}
-    }
-    tileData->sourceX = (id % amountTilesX) * tileSize;
-    tileData->sourceY = ((int)(id / amountTilesX)) * tileSize;
+int getNumberOfLayers(char* jsonString, errTileMap *err) {
+    jsmn_parser p;
+    jsmntok_t t[JSON_MAX_TOKEN];
+    jsmn_init(&p);
+    int amountTokens = jsmn_parse(&p, jsonString, strlen(jsonString), t, JSON_MAX_TOKEN);
 
-    return OK;
-}
-
-int getNumberOfLayers(char* jsonBuffer, errTileMap *err) {
-    cJSON* json = cJSON_Parse(jsonBuffer);
-    if (json == NULL) {
+    if (amountTokens < 0) {
 	*err = ERR_PARSE;
 	return 0;
     }
 
-    cJSON* layers = cJSON_GetObjectItem(json, "layers");
-    if (layers == NULL) {
-	cJSON_Delete(json);
+    jsmntok_t* layerStart = t;
+    int curLayerNumber = 0;
+
+    //Skip to startOfLayers
+    while(layerStart != t+amountTokens-1) {
+	 if (strncmp(jsonString + layerStart->start, "layers", layerStart->end - layerStart->start) == 0) {
+	    layerStart += 2;
+	    break;
+	 }
+	 layerStart++;
+    }
+
+    if (layerStart == t+amountTokens-1) {
 	*err = ERR_MISSING_PROPERTY;
 	return 0;
     }
 
-    *err = OK;
-    int numberOfLayers = cJSON_GetArraySize(layers);
-    cJSON_Delete(layers);
-    return numberOfLayers;
+    //Skip to selected layer (specifically name property)
+    while(layerStart != t+amountTokens-1) {
+	if (strncmp(jsonString + layerStart->start, "name", layerStart->end - layerStart->start) == 0) {
+	    curLayerNumber++;
+	} else if (layerStart->type == JSMN_ARRAY) {
+	    //Skip every tiles-array forward that is not current layer
+	    layerStart += layerStart->size * 7;
+	}
+	layerStart++;
+    }
+
+    if (curLayerNumber == 0) {
+	*err = ERR_NO_LAYER;
+    }
+    return curLayerNumber;
 }
 
 void unloadLayer(struct LayerData* layerData) {
