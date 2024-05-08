@@ -16,6 +16,8 @@ typedef struct TileMap {
 
 typedef enum errTileMap {
     OK = 1,
+    ERR_FILE_READ,
+    ERR_FILE_OPEN,
     ERR_PARSE,
     ERR_MISSING_PROPERTY,
     ERR_LAYER_NOT_FOUND,

@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-static int readFromFile(char* buf, char* filename, int buflen);
+errTileMap readFromFile(char* buf, char* filename, int buflen);
 
 TileMap* createMap(char* textureFileName, char* jsonFileName, errTileMap* err) {
     *err = OK;
@@ -18,7 +18,12 @@ TileMap* createMap(char* textureFileName, char* jsonFileName, errTileMap* err) {
     }
     //Load JSON
     char jsonBuffer[JSON_LEN];
-    readFromFile(jsonBuffer, jsonFileName, JSON_LEN);
+    *err = readFromFile(jsonBuffer, jsonFileName, JSON_LEN);
+    if (*err != OK) {
+	UnloadTexture(map->texture);
+	free(map);
+	return NULL;
+    }
 
     //Load number of layers
     map->numberLayers = getNumberOfLayers(jsonBuffer, err);
@@ -95,17 +100,17 @@ void unloadMap(TileMap* map) {
     free(map);
 }
 
-static int readFromFile(char* buf, char* filename, int buflen) {
+errTileMap readFromFile(char* buf, char* filename, int buflen) {
     FILE* file = fopen(filename,"r");
     if (file == NULL) {
-	return 0;
+	return ERR_FILE_OPEN;
     }
     //Read 1 byte BUF_LEN times or until EOF
     int bytesRead = fread(buf, 1, buflen, file);
     if (bytesRead == EOF) {
 	fclose(file);
-	return 0;
+	return ERR_FILE_READ;
     }
     fclose(file);
-    return 1;
+    return OK;
 }
