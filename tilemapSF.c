@@ -111,6 +111,7 @@ errTileMap readFromFile(char* buf, char* filename, int buflen) {
 	fclose(file);
 	return ERR_FILE_READ;
     }
+    buf[bytesRead] = '\0';
     fclose(file);
     return OK;
 }
