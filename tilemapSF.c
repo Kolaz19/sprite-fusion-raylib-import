@@ -66,6 +66,8 @@ void printMapData(TileMap* map) {
     }
 }
 
+
+
 void renderLayer(TileMap* map, const char* layerName, Vector2 pos, float zoom) {
     struct LayerData* ld = NULL;
     for (int i = 0; i < map->numberLayers; i++) {
@@ -81,7 +83,6 @@ void renderLayer(TileMap* map, const char* layerName, Vector2 pos, float zoom) {
     struct TileData* td;
     for (int i = 0; i < ld->amountOfTiles; i++) {
 	td = ld->tileData+i;
-	//float shiftX = 
 	DrawTexturePro(map->texture, 
 		(Rectangle){td->sourceX,td->sourceY,ld->tileSize,ld->tileSize},
 		(Rectangle){(td->targetX * zoom) + pos.x ,(td->targetY * zoom) + pos.y, ld->tileSize * zoom,ld->tileSize * zoom}, 
@@ -98,6 +99,33 @@ void unloadMap(TileMap* map) {
     free(map->layerData);
     UnloadTexture(map->texture);
     free(map);
+}
+
+Rectangle* createCollisionData(TileMap* map, int* amount, errTileMap* err) {
+    struct LayerData* ld;
+    *amount = 0;
+    //Get number of tiles that are collision relevant
+    for (int i = 0; i < map->numberLayers; i++) {
+	ld = *(map->layerData+i);
+	if (ld->isCollisionLayer == true) {
+	    *amount += ld->amountOfTiles;
+	}
+    }
+
+    Rectangle* colData = malloc(*amount * sizeof(Rectangle));
+    int index = 0;
+
+    for (int i = 0; i < map->numberLayers; i++) {
+	ld = *(map->layerData+i);
+	if (ld->isCollisionLayer == true) {
+	    for (int k = 0; k < ld->amountOfTiles; k++, index++) {
+		(colData+index)->x = (ld->tileData+k)->targetX;
+		(colData+index)->y = (ld->tileData+k)->targetY;
+		(colData+index)->width = (colData+index)->height = ld->tileSize;
+	    }
+	}
+    }
+    return colData;
 }
 
 errTileMap readFromFile(char* buf, char* filename, int buflen) {
