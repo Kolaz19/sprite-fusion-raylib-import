@@ -66,8 +66,6 @@ void printMapData(TileMap* map) {
     }
 }
 
-
-
 void renderLayer(TileMap* map, const char* layerName, Vector2 pos, float zoom) {
     struct LayerData* ld = NULL;
     for (int i = 0; i < map->numberLayers; i++) {
@@ -111,10 +109,15 @@ Rectangle* createCollisionData(TileMap* map, int* amount, errTileMap* err) {
 	    *amount += ld->amountOfTiles;
 	}
     }
+    if (*amount == 0) {
+	*err = ERR_NO_COLLISION_DATA;
+	return NULL;
+    }
 
     Rectangle* colData = malloc(*amount * sizeof(Rectangle));
     int index = 0;
 
+    //Create collision rectangles based on tile data
     for (int i = 0; i < map->numberLayers; i++) {
 	ld = *(map->layerData+i);
 	if (ld->isCollisionLayer == true) {
@@ -126,6 +129,10 @@ Rectangle* createCollisionData(TileMap* map, int* amount, errTileMap* err) {
 	}
     }
     return colData;
+}
+
+void unloadCollisionData(Rectangle* col) {
+    free(col);
 }
 
 errTileMap readFromFile(char* buf, char* filename, int buflen) {

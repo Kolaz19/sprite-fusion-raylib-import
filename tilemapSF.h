@@ -23,12 +23,15 @@ typedef enum errTileMap {
     ERR_LAYER_NOT_FOUND,
     ERR_NO_LAYER,
     ERR_TILEDATA_MISSING,
-    ERR_TEXTURE_LOAD	       
+    ERR_TEXTURE_LOAD,
+    ERR_NO_COLLISION_DATA
 }errTileMap;
 
 TileMap* createMap(char* textureFileName, char* jsonFileName, errTileMap* err);
 void unloadMap(TileMap* map);
 void printMapData(TileMap* map);
 void renderLayer(TileMap* map, const char* layerName, Vector2 pos, float zoom);
+Rectangle* createCollisionData(TileMap* map, int* amount, errTileMap* err);
+void unloadCollisionData(Rectangle* col);
 
 #endif
