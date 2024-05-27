@@ -31,7 +31,7 @@ TileMap* createMap(char* textureFileName, char* jsonFileName, errTileMap* err);
 void unloadMap(TileMap* map);
 void printMapData(TileMap* map);
 void renderLayer(TileMap* map, const char* layerName, Vector2 pos, float zoom);
-Rectangle* createCollisionData(TileMap* map, int* amount, errTileMap* err);
+Rectangle* createCollisionData(TileMap* map, Vector2 pos, float zoom, int* amount, errTileMap* err);
 void unloadCollisionData(Rectangle* col);
 
 #endif

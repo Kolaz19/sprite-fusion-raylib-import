@@ -99,7 +99,7 @@ void unloadMap(TileMap* map) {
     free(map);
 }
 
-Rectangle* createCollisionData(TileMap* map, int* amount, errTileMap* err) {
+Rectangle* createCollisionData(TileMap* map, Vector2 pos, float zoom, int* amount, errTileMap* err) {
     struct LayerData* ld;
     *amount = 0;
     //Get number of tiles that are collision relevant
@@ -122,9 +122,9 @@ Rectangle* createCollisionData(TileMap* map, int* amount, errTileMap* err) {
 	ld = *(map->layerData+i);
 	if (ld->isCollisionLayer == true) {
 	    for (int k = 0; k < ld->amountOfTiles; k++, index++) {
-		(colData+index)->x = (ld->tileData+k)->targetX;
-		(colData+index)->y = (ld->tileData+k)->targetY;
-		(colData+index)->width = (colData+index)->height = ld->tileSize;
+		(colData+index)->x = ((ld->tileData+k)->targetX * zoom) + pos.x;
+		(colData+index)->y = ((ld->tileData+k)->targetY * zoom) + pos.y;
+		(colData+index)->width = (colData+index)->height = ld->tileSize * zoom;
 	    }
 	}
     }
