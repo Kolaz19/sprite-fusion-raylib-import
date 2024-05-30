@@ -1,8 +1,7 @@
 lib/
 include/
 object_files/
-main
+demo
 spritesheet.png
 map.json
 cJSON.c
-main.c

@@ -9,7 +9,7 @@
 typedef struct LayerData** LD;
 typedef struct TileMap* TM;
 
-
+    
 typedef enum errTileMap {
     OK = 1,
     ERR_FILE_READ,
