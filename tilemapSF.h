@@ -7,12 +7,8 @@
 #include "include/raylib.h"
 
 typedef struct LayerData** LD;
+typedef struct TileMap* TM;
 
-typedef struct TileMap {
-    Texture2D texture;
-    int numberLayers;
-    LD layerData;
-} TileMap;
 
 typedef enum errTileMap {
     OK = 1,
@@ -27,11 +23,11 @@ typedef enum errTileMap {
     ERR_NO_COLLISION_DATA
 }errTileMap;
 
-TileMap* createMap(char* textureFileName, char* jsonFileName, errTileMap* err);
-void unloadMap(TileMap* map);
-void printMapData(TileMap* map);
-void renderLayer(TileMap* map, const char* layerName, Vector2 pos, float zoom);
-Rectangle* createCollisionData(TileMap* map, Vector2 pos, float zoom, int* amount, errTileMap* err);
+TM createMap(char* textureFileName, char* jsonFileName, errTileMap* err);
+void unloadMap(TM map);
+void printMapData(TM map);
+void renderLayer(TM map, const char* layerName, Vector2 pos, float zoom);
+Rectangle* createCollisionData(TM map, Vector2 pos, float zoom, int* amount, errTileMap* err);
 void unloadCollisionData(Rectangle* col);
 
 #endif

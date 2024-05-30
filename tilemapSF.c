@@ -5,6 +5,12 @@
 #include <stdlib.h>
 #include <string.h>
 
+typedef struct TileMap {
+    Texture2D texture;
+    int numberLayers;
+    LD layerData;
+} TileMap;
+
 errTileMap readFromFile(char* buf, char* filename, int buflen);
 
 TileMap* createMap(char* textureFileName, char* jsonFileName, errTileMap* err) {
