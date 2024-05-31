@@ -134,6 +134,33 @@ Rectangle* createCollisionData(TileMap* map, Vector2 pos, float zoom, int* amoun
 	    }
 	}
     }
+    *err = OK;
+    return colData;
+}
+
+Rectangle* createCollisionDataLayer(TileMap* map, int layer, Vector2 pos, float zoom, int* amount, errTileMap* err) {
+    struct LayerData* ld;
+    *amount = 0;
+
+    if (layer > map->numberLayers || layer < 0) {
+	*err = ERR_LAYER_NOT_FOUND;
+	return NULL;
+    }
+
+    ld = *(map->layerData+(layer-1));
+    //Get number of tiles on layer
+    *amount += ld->amountOfTiles;
+
+    Rectangle* colData = malloc(*amount * sizeof(Rectangle));
+    int index = 0;
+
+    //Create collision rectangles based on tile data
+    for (int k = 0; k < ld->amountOfTiles; k++, index++) {
+	(colData+index)->x = ((ld->tileData+k)->targetX * zoom) + pos.x;
+	(colData+index)->y = ((ld->tileData+k)->targetY * zoom) + pos.y;
+	(colData+index)->width = (colData+index)->height = ld->tileSize * zoom;
+    }
+    *err = OK;
     return colData;
 }
 

@@ -28,6 +28,7 @@ void unloadMap(TM map);
 void printMapData(TM map);
 void renderLayer(TM map, const char* layerName, Vector2 pos, float zoom);
 Rectangle* createCollisionData(TM map, Vector2 pos, float zoom, int* amount, errTileMap* err);
+Rectangle* createCollisionDataLayer(TM map, int layer, Vector2 pos, float zoom, int* amount, errTileMap* err);
 void unloadCollisionData(Rectangle* col);
 
 #endif
